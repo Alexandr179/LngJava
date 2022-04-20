@@ -7,7 +7,7 @@ public class Application {
 
     public static void main(String[] args) {
         try {
-            new Processing().go();
+            new Processing().process();
         } catch (IOException ignored) {
         }
     }
