@@ -1,139 +1,82 @@
 package ru.peacockTeam;
 
-import com.mxgraph.layout.mxCircleLayout;
-import com.mxgraph.layout.mxIGraphLayout;
-import com.mxgraph.util.mxCellRenderer;
-import org.jgrapht.Graph;
-import org.jgrapht.ext.JGraphXAdapter;
-import org.jgrapht.graph.*;
-import org.jgrapht.traverse.DepthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.peacockTeam.utils.FiosUtil;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * https://javascopes.com/jgrapht-066252f4/
- * https://www.programcreek.com/java-api-examples/?api=org.jgrapht.traverse.DepthFirstIterator
- */
 @Component
 public class Processing {
 
     @Autowired
     FiosUtil fiosUtil;
 
-    Graph<String, DefaultEdge> graph = new SimpleDirectedGraph<>(DefaultEdge.class);
-    Map<String, List<List<String>>> groupMap = new HashMap<>();
-
-    Integer startVertexCounter = 0;
+    List<Map<String, Set<List<String>>>> groupsMapList = new CopyOnWriteArrayList<>();
 
     public void process() throws IOException {
-        System.out.println(">> API process. Building Graph...");
+        System.out.println(">> API process. Building GroupMap...");
         BufferedReader csvReader = new BufferedReader(new InputStreamReader(fiosUtil.getResourceFileStream()));
-        String row;
-        while ((row = csvReader.readLine()) != null) {
-            List<String> rowSet = fiosUtil.getRowSet(row);
-            createGraph(rowSet);
+        String rowAsStr;
+        groupsMapListInit(fiosUtil.getRowSet(csvReader.readLine()));
+        while ((rowAsStr = csvReader.readLine()) != null) {
+            List<String> row = fiosUtil.getRowSet(rowAsStr);
+            if (!row.isEmpty()) buildGroupMap(row);
         }
         csvReader.close();
-        startVertexCounter = graph.vertexSet().size();
-        outputGroups(graph, groupMap);
-//        imaginaryGraph(graph);// from no_big_size graph
+        outputGroups();
     }
 
-    private void sleepPaarSecunde() {
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException ignored) {
-        }
+    private void groupsMapListInit(List<String> row) {
+        Set<List<String>> rowsList = new HashSet<>();
+        Map<String, Set<List<String>>> groupMap = new HashMap<>();
+
+        rowsList.add(row);// without first checked on conditional: !row.isEmpty()
+        row.forEach(item -> groupMap.put(item, rowsList));
+        groupsMapList.add(groupMap);
     }
 
-    public void imaginaryGraph(Graph<String, DefaultEdge> graph) throws IOException {
-        JGraphXAdapter<String, DefaultEdge> graphAdapter = new JGraphXAdapter<>(graph);
-        mxIGraphLayout layout = new mxCircleLayout(graphAdapter);
-        layout.execute(graphAdapter.getDefaultParent());
-        BufferedImage image = mxCellRenderer.createBufferedImage(graphAdapter, null, 2, Color.WHITE, true, null);
-        File imgFile = new File("src/main/resources/graph.png");
-        ImageIO.write(image, "PNG", imgFile);
-        System.err.println("Imaginary Graph to graph.png");
-    }
-
-    public void createGraph(List<String> row) {
-        List<List<String>> list = new ArrayList<>();
-        list.add(row);
-        String initItem = "";
-        if (!row.isEmpty()) initItem = row.get(0);
-        for (String item : row) {
-            if (!item.isEmpty()) {
-                graph.addVertex(item);
-//                System.out.println("Vertex: " + item);
-                groupMap.merge(item, list, (x, y) -> {// https://devmark.ru/article/java-map-new-methods
-                    x.addAll(y);
-                    return x;
-                });
-//                if (groupMap.get(item).size() > 1) System.out.println("INTERSECTION. GroupMap, key<" + item + ">: " + groupMap.get(item));
-                if (!initItem.isEmpty() && !initItem.equals(item)) {
-                    DefaultEdge defaultEdge = graph.addEdge(initItem, item);
-                    initItem = item;
-//                    System.err.println("Edge: " + defaultEdge);
-                }
+    public void buildGroupMap(List<String> row) {
+        Iterator<Map<String, Set<List<String>>>> groupsMapListIterator = groupsMapList.iterator();
+        while (groupsMapListIterator.hasNext()) {
+            Map<String, Set<List<String>>> groupMap = groupsMapListIterator.next();
+            AtomicBoolean isInterception = new AtomicBoolean(false);
+            for (String rowItem : row) {
+                groupMap.keySet().stream()
+                        .filter(keyGroupMap -> keyGroupMap.equals(rowItem))
+                        .findAny()// merge - найдено совпадение ключа в row{1,2,3}  groupsMapList.groupMap()
+                        .ifPresent(keyGroupMap -> {
+                            boolean added = groupMap.get(keyGroupMap).add(row);// добавление row в groupMap
+                            System.out.println("groupMap<" + keyGroupMap + ">: " + row);
+                            isInterception.set(true);
+                        });
+                if(isInterception.get()) break;//NO ADD TO groupMap ..
+            }
+            if (!isInterception.get()) {
+                Map<String, Set<List<String>>> nextGroupMap = new HashMap<>();
+                nextGroupMap.put(row.get(0), Collections.singleton(row));
+                System.err.println("NEW! groupMap<" + row.get(0) + ">: " + row);
+                groupsMapList.add(nextGroupMap);// // добавление row в groupsMapList.newGroupMap (* groupsMapList - итерация через iterator)
             }
         }
     }
 
-    Long vertexCounter = 0L;
-    List<String> vertexes = new LinkedList<>();
-
-    public void outputGroups(Graph<String, DefaultEdge> graph, Map<String, List<List<String>>> groupMap) {
-        // todo: getting all the paths
-        int groupsCounter = 0;
-//        while (graph.vertexSet().size() != 0){
-            Iterator<String> iter = new DepthFirstIterator<>(graph);
-            while (iter.hasNext()) {
-                String vertex = iter.next();
-                groupMap.get(vertex).forEach(row -> System.out.println("Row: " + row + ". Vertex<" + vertex + "> number: " + vertexCounter++));//.sort(Comparator.comparingInt(List::size));
-
-                Set<DefaultEdge> defaultEdges = graph.edgesOf(vertex);
-                graph.removeAllEdges(defaultEdges);
-            }
-            groupsCounter ++;
-//        }
-        System.err.println("Vertex graph start_number: " + startVertexCounter);
-        System.err.println("Vertex graph number: " + graph.vertexSet().size());
-        System.err.println("API number groups: " + groupsCounter);
-
-        //  todo: getting all the paths between 2 random countries
-//        AllDirectedPaths<String, DefaultEdge> paths = new AllDirectedPaths<>(graph);
-//        List<GraphPath<String, DefaultEdge>> longestPath = paths.getAllPaths("", "", true, null);
-//        GraphPath<String, DefaultEdge> obj = null;
-//        double maxlenght=0;
-//        for( GraphPath<String, DefaultEdge> pa :longestPath ) {
-//            if(pa.getLength()>maxlenght)
-//                obj= pa;
-//        }
-
-        //  todo: Subgraph
-//        StrongConnectivityAlgorithm<String, DefaultEdge> scAlg = new KosarajuStrongConnectivityInspector<>(graph);
-//        List<Graph<String, DefaultEdge>> stronglyConnectedComponents = scAlg.getStronglyConnectedComponents();
-//        System.err.println("API count groups are: " + stronglyConnectedComponents.size());
+    public void outputGroups() {
+        System.err.println("API number groups: " + groupsMapList.size());
     }
 
 
+//        groupMap.merge(item, rowList, (x, y) -> {// https://devmark.ru/article/java-map-new-methods
+//            x.addAll(y);
+//            return x;
+//        });
 
 }
-
-
-
-
 
 
 

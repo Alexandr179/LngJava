@@ -27,9 +27,10 @@ public class Application {
         Environment environment = CONTEXT.getBean(Environment.class);
         SOURCE_LNG_FILE = environment.getProperty("SOURCE_LNG_FILE");
         formStopSet();
-        PARSING_TIME = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
+        long start_api_time = System.nanoTime();
         try {
             CONTEXT.getBean(Processing.class).process();
+            PARSING_TIME = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start_api_time);
             System.out.println("API TIME: " + DurationFormatUtils.formatDuration(PARSING_TIME, "HH:mm:ss,SSS") + " (HH:mm:ss,SSS)");
         } catch (IOException ignored) {
         }
