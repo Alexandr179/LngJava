@@ -17,13 +17,13 @@ public class Processing {
     @Autowired
     FiosUtil fiosUtil;
 
-    List<Map<String, Set<List<String>>>> groupsMapList = new CopyOnWriteArrayList<>();
+    List<Map<String, ArrayList<ArrayList<String>>>> groupMapList = new CopyOnWriteArrayList<>();
+    Long rowCounter = 0L;
 
     public void process() throws IOException {
         System.out.println(">> API process. Building GroupMap...");
         BufferedReader csvReader = new BufferedReader(new InputStreamReader(fiosUtil.getResourceFileStream()));
         String rowAsStr;
-        groupsMapListInit(fiosUtil.getRowSet(csvReader.readLine()));
         while ((rowAsStr = csvReader.readLine()) != null) {
             List<String> row = fiosUtil.getRowSet(rowAsStr);
             if (!row.isEmpty()) buildGroupMap(row);
@@ -32,51 +32,54 @@ public class Processing {
         outputGroups();
     }
 
-    private void groupsMapListInit(List<String> row) {
-        Set<List<String>> rowsList = new HashSet<>();
-        Map<String, Set<List<String>>> groupMap = new HashMap<>();
-
-        rowsList.add(row);// without first checked on conditional: !row.isEmpty()
-        row.forEach(item -> groupMap.put(item, rowsList));
-        groupsMapList.add(groupMap);
+    private void outputGroups() {
+        System.out.println("\nAPI number groups: " + groupMapList.size());
+//        int groupCounter = 0;
+//        for(Map<String, ArrayList<ArrayList<String>>> groupMap : groupMapList){
+//            System.out.println("\nGroup<" + groupCounter++ + "> rows:");
+//            ArrayList<ArrayList<String>> rows = groupMap.values().stream()
+//                    .distinct()
+//                    .max(Comparator.comparing(ArrayList::size)).get();
+//            System.out.println(rows);
+//        }
     }
 
+
     public void buildGroupMap(List<String> row) {
-        Iterator<Map<String, Set<List<String>>>> groupsMapListIterator = groupsMapList.iterator();
-        while (groupsMapListIterator.hasNext()) {
-            Map<String, Set<List<String>>> groupMap = groupsMapListIterator.next();
-            AtomicBoolean isInterception = new AtomicBoolean(false);
-            for (String rowItem : row) {
-                groupMap.keySet().stream()
-                        .filter(keyGroupMap -> keyGroupMap.equals(rowItem))
-                        .findAny()// merge - найдено совпадение ключа в row{1,2,3}  groupsMapList.groupMap()
-                        .ifPresent(keyGroupMap -> {
-                            boolean added = groupMap.get(keyGroupMap).add(row);// добавление row в groupMap
-                            System.out.println("groupMap<" + keyGroupMap + ">: " + row);
-                            isInterception.set(true);
-                        });
-                if(isInterception.get()) break;//NO ADD TO groupMap ..
+        AtomicBoolean intersection = new AtomicBoolean(false);
+        for (String rowItem : row) {
+            Iterator<Map<String, ArrayList<ArrayList<String>>>> groupMapListIterator = groupMapList.iterator();
+            while (groupMapListIterator.hasNext()) {
+                Map<String, ArrayList<ArrayList<String>>> groupMap = groupMapListIterator.next();
+                if (groupMap.containsKey(rowItem)) {
+                    putRowToGroupMap(row, groupMap);
+                    System.out.println("Row: " + rowCounter++ + ", total groups: " + groupMapList.size());
+                    intersection.set(true);
+                }
             }
-            if (!isInterception.get()) {
-                Map<String, Set<List<String>>> nextGroupMap = new HashMap<>();
-                nextGroupMap.put(row.get(0), Collections.singleton(row));
-                System.err.println("NEW! groupMap<" + row.get(0) + ">: " + row);
-                groupsMapList.add(nextGroupMap);// // добавление row в groupsMapList.newGroupMap (* groupsMapList - итерация через iterator)
-            }
+        }
+        if (!intersection.get()) {
+            putRowNewGroupMap(row);
         }
     }
 
-    public void outputGroups() {
-        System.err.println("API number groups: " + groupsMapList.size());
+    private void putRowNewGroupMap(List<String> row) {
+        Map<String, ArrayList<ArrayList<String>>> newGroupMap = new HashMap<>();
+        putRowToGroupMap(row, newGroupMap);
+        groupMapList.add(newGroupMap);
+        System.out.println("Row: " + rowCounter++ + ", total groups: " + groupMapList.size());
     }
 
-
-//        groupMap.merge(item, rowList, (x, y) -> {// https://devmark.ru/article/java-map-new-methods
-//            x.addAll(y);
-//            return x;
-//        });
-
+    private void putRowToGroupMap(List<String> row, Map<String, ArrayList<ArrayList<String>>> newGroupMap) {
+        for (String rowItem : row) {
+            ArrayList<String> copyRow = new ArrayList<>(row);
+            ArrayList<ArrayList<String>> groupMapItemValue = new ArrayList<>();
+            groupMapItemValue.add(copyRow);
+            newGroupMap.put(rowItem, groupMapItemValue);
+        }
+    }
 }
+
 
 
 

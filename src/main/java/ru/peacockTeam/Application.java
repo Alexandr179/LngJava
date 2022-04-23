@@ -31,7 +31,7 @@ public class Application {
         try {
             CONTEXT.getBean(Processing.class).process();
             PARSING_TIME = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start_api_time);
-            System.out.println("API TIME: " + DurationFormatUtils.formatDuration(PARSING_TIME, "HH:mm:ss,SSS") + " (HH:mm:ss,SSS)");
+            System.out.println("\nAPI TIME: " + DurationFormatUtils.formatDuration(PARSING_TIME, "HH:mm:ss,SSS") + " (HH:mm:ss,SSS)");
         } catch (IOException ignored) {
         }
     }
