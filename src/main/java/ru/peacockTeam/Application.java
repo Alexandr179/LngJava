@@ -1,45 +1,23 @@
 package ru.peacockTeam;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.core.env.Environment;
-import ru.peacockTeam.config.ApplicationConfig;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
 public class Application {
 
-    public static ApplicationContext CONTEXT;
-    public static Set<String> STOP_ROW_SET = new HashSet<>();
     public static long PARSING_TIME;
-    public static String SOURCE_LNG_FILE;
+    public static long START_API_TIME;
+    public static String SOURCE_LNG_FILE = "lng.csv";
 
     public static void main(String[] args) {
-        initApi();
-    }
-
-    private static void initApi() {
-        CONTEXT = new AnnotationConfigApplicationContext(ApplicationConfig.class);
-        Environment environment = CONTEXT.getBean(Environment.class);
-        SOURCE_LNG_FILE = environment.getProperty("SOURCE_LNG_FILE");
-        formStopSet();
-        long start_api_time = System.nanoTime();
+        START_API_TIME = System.nanoTime();
         try {
-            CONTEXT.getBean(Processing.class).process();
-            PARSING_TIME = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start_api_time);
+            new Processing().process();
+            PARSING_TIME = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - START_API_TIME);
             System.out.println("\nAPI TIME: " + DurationFormatUtils.formatDuration(PARSING_TIME, "HH:mm:ss,SSS") + " (HH:mm:ss,SSS)");
         } catch (IOException ignored) {
         }
-    }
-
-    private static void formStopSet() {
-        STOP_ROW_SET.add("");
-        STOP_ROW_SET.add("");
-        STOP_ROW_SET.add("");
-        STOP_ROW_SET.add("");
     }
 }
