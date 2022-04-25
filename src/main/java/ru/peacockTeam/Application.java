@@ -7,14 +7,11 @@ import org.springframework.core.env.Environment;
 import ru.peacockTeam.config.ApplicationConfig;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 
 public class Application {
 
     public static ApplicationContext CONTEXT;
-    public static Set<String> STOP_ROW_SET = new HashSet<>();
     public static long PARSING_TIME;
     public static String SOURCE_LNG_FILE;
 
@@ -26,19 +23,11 @@ public class Application {
         CONTEXT = new AnnotationConfigApplicationContext(ApplicationConfig.class);
         Environment environment = CONTEXT.getBean(Environment.class);
         SOURCE_LNG_FILE = environment.getProperty("SOURCE_LNG_FILE");
-        formStopSet();
         PARSING_TIME = TimeUnit.NANOSECONDS.toMillis(System.nanoTime());
         try {
             CONTEXT.getBean(Processing.class).process();
             System.out.println("API TIME: " + DurationFormatUtils.formatDuration(PARSING_TIME, "HH:mm:ss,SSS") + " (HH:mm:ss,SSS)");
         } catch (IOException ignored) {
         }
-    }
-
-    private static void formStopSet() {
-        STOP_ROW_SET.add("");
-        STOP_ROW_SET.add("");
-        STOP_ROW_SET.add("");
-        STOP_ROW_SET.add("");
     }
 }
