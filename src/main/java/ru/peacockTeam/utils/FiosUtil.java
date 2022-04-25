@@ -7,8 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import static ru.peacockTeam.Application.SOURCE_LNG_FILE;
 import static ru.peacockTeam.Application.START_API_TIME;
+import static ru.peacockTeam.Processing.SOURCE_LNG_FILE;
 
 public class FiosUtil {
 

@@ -9,7 +9,6 @@ public class Application {
 
     public static long PARSING_TIME;
     public static long START_API_TIME;
-    public static String SOURCE_LNG_FILE = "lng.csv";
 
     public static void main(String[] args) {
         START_API_TIME = System.nanoTime();

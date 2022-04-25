@@ -1,16 +1,15 @@
 package ru.peacockTeam;
 
 import ru.peacockTeam.utils.FiosUtil;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
-
 import static ru.peacockTeam.utils.FiosUtil.getCurrentTime;
 
 public class Processing {
 
+    public static String SOURCE_LNG_FILE = "lng.csv";
     public FiosUtil fiosUtil;
     private Integer groupCounter = 0;
     private Integer rowCounter = 0;
@@ -36,7 +35,7 @@ public class Processing {
     }
 
     private void outputGroups() {
-        System.out.println("API groups number: " + groupMapList.size());
+        System.out.println("\nAPI groups number: " + groupMapList.size());
         for (Map<String, List<List<String>>> groupMap : groupMapList) {
             System.out.println("\nGroup<" + groupCounter++ + ">:");
             groupMap.values().stream()
@@ -46,6 +45,7 @@ public class Processing {
     }
 
     public void buildGroupMap(List<String> row) {
+        rowCounter++;
         Map<String, List<List<String>>> collapsedGroupMap = new HashMap<>();
         boolean intersection = false;
         for (String rowItem : row) {
@@ -60,7 +60,7 @@ public class Processing {
                 }
             }
             if (intersection) groupMapList.add(collapsedGroupMap);
-            System.err.println("DEBUG. FileRow<" + rowCounter++ + ">, total groups: " + groupMapList.size() + ". Time: " + getCurrentTime() + " [INTERSECTION]");
+            System.err.println("DEBUG. FileRow<" + rowCounter + ">, total groups: " + groupMapList.size() + ". Time: " + getCurrentTime() + " [INTERSECTION]");
         }
         if (!intersection) putRowToNewGroupMap(row);
     }
@@ -74,10 +74,10 @@ public class Processing {
     }
 
     private void putRowToNewGroupMap(List<String> row) {
-        System.out.println("DEBUG. FileRow<" + rowCounter++ + ">, total groups: " + groupMapList.size() + ". Time: " + getCurrentTime());
         Map<String, List<List<String>>> newGroupMap = new HashMap<>();
         putRowToGroupMap(row, newGroupMap);
         groupMapList.add(newGroupMap);
+        System.out.println("DEBUG. FileRow<" + rowCounter + ">, total groups: " + groupMapList.size() + ". Time: " + getCurrentTime());
     }
 }
 
