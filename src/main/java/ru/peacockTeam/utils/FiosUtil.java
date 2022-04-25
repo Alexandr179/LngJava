@@ -1,7 +1,10 @@
 package ru.peacockTeam.utils;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +24,20 @@ public class FiosUtil {
                 .map(item -> item.replaceAll("\\\"", ""))
                 .filter(item -> !item.isEmpty())
                 .collect(Collectors.toList());
+    }
+
+    public byte[] getCopyByteArrayStream(InputStream byteArrayInputStream) {
+        byte[] bytesResource = new byte[0];
+        try {
+            bytesResource = IOUtils.toByteArray(byteArrayInputStream);
+        } catch (IOException e) {
+        } finally {
+            try {
+                byteArrayInputStream.close();
+            } catch (IOException e) {
+            }
+        }
+        return bytesResource;
     }
 
     public static String getCurrentTime(){

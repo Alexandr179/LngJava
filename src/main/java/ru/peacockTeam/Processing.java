@@ -2,6 +2,7 @@ package ru.peacockTeam;
 
 import ru.peacockTeam.utils.FiosUtil;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
@@ -14,6 +15,7 @@ public class Processing {
     private Integer groupCounter = 0;
     private Integer rowCounter = 0;
     public volatile BufferedReader csvReader;
+    public byte[] resourceFileByteStream;
 
     public Processing() {
         this.fiosUtil = new FiosUtil();
@@ -23,7 +25,8 @@ public class Processing {
     public List<Map<String, List<List<String>>>> groupMapList = new ArrayList<>();
 
     public void process() throws IOException {
-        csvReader = new BufferedReader(new InputStreamReader(fiosUtil.getResourceFileStream()));
+        resourceFileByteStream = fiosUtil.getCopyByteArrayStream(fiosUtil.getResourceFileStream());
+        csvReader = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(resourceFileByteStream)));
         System.out.println(">> API process. Building GroupMap...");
         String rowAsStr;
         while ((rowAsStr = csvReader.readLine()) != null) {
