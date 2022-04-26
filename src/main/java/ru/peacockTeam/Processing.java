@@ -1,9 +1,8 @@
 package ru.peacockTeam;
 
 import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleDirectedGraph;
-import org.jgrapht.traverse.BreadthFirstIterator;
+import org.jgrapht.graph.*;
+import org.jgrapht.traverse.DepthFirstIterator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.peacockTeam.utils.FiosUtil;
@@ -12,17 +11,29 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Component
 public class Processing {
 
+    /**
+     * https://javascopes.com/jgrapht-066252f4/
+     * https://www.programcreek.com/java-api-examples/?api=org.jgrapht.traverse.DepthFirstIterator
+     * <p>
+     * REAL_GRAPH_SAMPLES:                                                                                                               https://jgrapht.org/guide/UserOverview
+     * https://programming.vip/docs/using-the-jgrapht-library-to-manipulate-graphs.html
+     * ..some other
+     * https://stackoverflow.com/questions/57184523/jgrapht-how-to-represent-set-of-vertices-and-edges-as-efficiently-as-possible
+     * https://stackoverflow.com/questions/32935692/jgrapht-apply-bfs-to-weightedgraph
+     */
+
     @Autowired
     FiosUtil fiosUtil;
 
-    public Graph<String, DefaultEdge> graph = new SimpleDirectedGraph<>(DefaultEdge.class);
+    public Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);//  DefaultDirectedGraph     DefaultDirectedWeightedGraph
     public Map<String, List<List<String>>> groupMap = new HashMap<>();
-    private Integer groupCounter = 0;
+    private Integer groupCounter = 1;
 
     public void process() throws IOException {
         System.out.println(">> API process. Building Graph... \t\t\t\t(jgrapht.v1.1.0)");
@@ -33,12 +44,12 @@ public class Processing {
             createGraph(rowSet);
         }
         csvReader.close();
-        System.out.println(">> Created graph. Graph vertexes are: " + graph.vertexSet().size() +
-                "\t\t(unique digits in all row's)");
-        boolean isEndOfGroups = outOfGroups();
+        System.out.println(">> Created graph. Graph vertexes are: " + graph.vertexSet().size() + "\t\t(unique digits in all row's)");
+        boolean isEndOfGroups = graphIterate(graph);
         while (!isEndOfGroups) {
-            isEndOfGroups = outOfGroups();
+            isEndOfGroups = graphIterate(graph);
         }
+        outOfGroups();
     }
 
     public void createGraph(List<String> row) {
@@ -61,14 +72,12 @@ public class Processing {
         }
     }
 
-    public boolean outOfGroups() {
+    public boolean graphIterate(Graph<String, DefaultEdge> graph) {
         List<List<String>> groupRows = new LinkedList<>();
         List<String> groupVertex = new ArrayList<>();
         Iterator<String> graphIterator = graph.vertexSet().iterator();
         if (graphIterator.hasNext()) {// getStartVertex
-            System.out.println("\nGroup<" + groupCounter++ + ">:" +
-                    "\n----------------------------------------------------------------------------");
-            BreadthFirstIterator<String, DefaultEdge> breadthFirstIterator = new BreadthFirstIterator<>(graph, graphIterator.next());
+            DepthFirstIterator<String, DefaultEdge> breadthFirstIterator = new DepthFirstIterator<>(graph, graphIterator.next());//todo: def:  BreadthFirstIterator
             while (breadthFirstIterator.hasNext()) {
                 String vertex = breadthFirstIterator.next();
                 groupVertex.add(vertex);
@@ -77,15 +86,44 @@ public class Processing {
                 groupRows.addAll(new ArrayList<>(groupMap.get(vertex)));
             }
         }
-        removeGraphEntryOutputRows(groupRows);
+        removeGraphEntrySaveRows(groupRows);
         return graph.vertexSet().size() == 0;
     }
 
-    private void removeGraphEntryOutputRows(List<List<String>> groupRows){
-        groupRows.stream()
+    List<List<List<String>>> groupList = new CopyOnWriteArrayList<>();
+
+    private void removeGraphEntrySaveRows(List<List<String>> group){
+        List<List<String>> rowsGroup = group.stream()
                 .peek(row -> row.forEach(vertex -> graph.removeVertex(vertex)))
                 .distinct()
                 .sorted(Comparator.comparingInt(List::size))
-                .forEach(System.out::println);
+                .collect(Collectors.toList());
+        groupList.add(rowsGroup);
+    }
+
+    public void outOfGroups(){
+        Iterator<List<List<String>>> groupsIterator = groupList.iterator();
+        while (groupsIterator.hasNext()){
+            List<List<String>> currentGroup = groupsIterator.next();
+
+
+            groupList.stream()
+                    .filter(iterateGroup -> iterateGroup.equals(currentGroup))
+                    .peek(iterateGroup -> {
+                        iterateGroup.addAll(currentGroup);
+                        groupList.remove(currentGroup);
+                    });
+        }
+
+        for (List<List<String>> rowsGroup : groupList){// todo: print groups
+            System.out.println("\nGroup<" + groupCounter++ + ">:" +
+                    "\n----------------------------------------------------------------------------");
+            rowsGroup.forEach(System.out::println);
+        }
     }
 }
+
+//"1000";"22222"
+//"1000";"1"
+//"3";"55"
+//"12345";"3"
