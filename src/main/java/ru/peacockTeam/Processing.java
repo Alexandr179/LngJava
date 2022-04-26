@@ -14,16 +14,6 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * https://javascopes.com/jgrapht-066252f4/
- * https://www.programcreek.com/java-api-examples/?api=org.jgrapht.traverse.DepthFirstIterator
- * <p>
- * REAL_GRAPH_SAMPLES:
- * https://programming.vip/docs/using-the-jgrapht-library-to-manipulate-graphs.html
- * ..some other
- * https://stackoverflow.com/questions/57184523/jgrapht-how-to-represent-set-of-vertices-and-edges-as-efficiently-as-possible
- * https://stackoverflow.com/questions/32935692/jgrapht-apply-bfs-to-weightedgraph
- */
 @Component
 public class Processing {
 
@@ -35,7 +25,7 @@ public class Processing {
     private Integer groupCounter = 0;
 
     public void process() throws IOException {
-        System.out.println(">> API process. Building Graph...");
+        System.out.println(">> API process. Building Graph... \t\t\t\t(jgrapht.v1.1.0)");
         BufferedReader csvReader = new BufferedReader(new InputStreamReader(fiosUtil.getResourceFileStream()));
         String row;
         while ((row = csvReader.readLine()) != null) {
@@ -43,6 +33,8 @@ public class Processing {
             createGraph(rowSet);
         }
         csvReader.close();
+        System.out.println(">> Created graph. Graph vertexes are: " + graph.vertexSet().size() +
+                "\t\t(unique digits in all row's)");
         boolean isEndOfGroups = outOfGroups();
         while (!isEndOfGroups) {
             isEndOfGroups = outOfGroups();
@@ -57,16 +49,13 @@ public class Processing {
         for (String item : row) {
             if (!item.isEmpty()) {
                 graph.addVertex(item);
-//                System.out.println("Vertex: " + item);
-                groupMap.merge(item, list, (x, y) -> {// https://devmark.ru/article/java-map-new-methods
+                groupMap.merge(item, list, (x, y) -> {
                     x.addAll(y);
                     return x.stream().distinct().collect(Collectors.toList());
                 });
-//                if (groupMap.get(item).size() > 1) System.out.println("INTERSECTION. GroupMap, key<" + item + ">: " + groupMap.get(item));
                 if (!initItem.isEmpty() && !initItem.equals(item)) {
-                    DefaultEdge defaultEdge = graph.addEdge(initItem, item);
+                    graph.addEdge(initItem, item);
                     initItem = item;
-//                    System.out.println("Edge: " + defaultEdge);
                 }
             }
         }
@@ -77,7 +66,8 @@ public class Processing {
         List<String> groupVertex = new ArrayList<>();
         Iterator<String> graphIterator = graph.vertexSet().iterator();
         if (graphIterator.hasNext()) {// getStartVertex
-            System.out.println("\nGroup<" + groupCounter++ + ">:");
+            System.out.println("\nGroup<" + groupCounter++ + ">:" +
+                    "\n----------------------------------------------------------------------------");
             BreadthFirstIterator<String, DefaultEdge> breadthFirstIterator = new BreadthFirstIterator<>(graph, graphIterator.next());
             while (breadthFirstIterator.hasNext()) {
                 String vertex = breadthFirstIterator.next();
@@ -87,9 +77,7 @@ public class Processing {
                 groupRows.addAll(new ArrayList<>(groupMap.get(vertex)));
             }
         }
-//        System.out.println("Vertex count: " + graph.vertexSet().size());
         removeGraphEntryOutputRows(groupRows);
-//        System.out.println("Vertex count (after clear): " + graph.vertexSet().size());
         return graph.vertexSet().size() == 0;
     }
 
@@ -101,10 +89,3 @@ public class Processing {
                 .forEach(System.out::println);
     }
 }
-
-
-
-
-
-
-
