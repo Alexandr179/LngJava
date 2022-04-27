@@ -56,14 +56,12 @@ public class Processing {
     }
 
     private void collapseMaps() {
-        boolean isIntercept = false;
         Iterator<Map.Entry<String, Set<String>>> interceptionsMapIterator = interceptionsMap.entrySet().iterator();
         while (interceptionsMapIterator.hasNext()) {
+            boolean isIntercept = false;
             Map.Entry<String, Set<String>> entryIntspMap = interceptionsMapIterator.next();
             String key = entryIntspMap.getKey();
-            Iterator<String> entryIntcpMapValuesIterator = entryIntspMap.getValue().iterator();
-            while (entryIntcpMapValuesIterator.hasNext()) {
-                String iteratedValue = entryIntcpMapValuesIterator.next();
+            for (String iteratedValue : entryIntspMap.getValue()) {
                 if (interceptionsMap.containsKey(iteratedValue)) {
                     Set<String> collapseIntersections = interceptionsMap.get(key);
                     interceptionsMap.merge(iteratedValue, collapseIntersections, (x, y) -> {
@@ -78,7 +76,7 @@ public class Processing {
                     isIntercept = true;
                 }
             }
-            System.out.println(rowsMap.get(key));
+            System.out.println("Group<>: " + rowsMap.get(key) + ", interception: " + isIntercept);
             interceptionsMap.remove(key);
             rowsMap.remove(key);
         }
