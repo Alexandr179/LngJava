@@ -71,7 +71,7 @@ public class Processing {
                 }
             }
         }
-        graph.addEdge(row.get(0), row.get(row.size()-1));
+        if(row.size() == 3) graph.addEdge(row.get(0), row.get(row.size()-1));
     }
 
     public boolean graphIterate(Graph<String, DefaultEdge> graph) {
