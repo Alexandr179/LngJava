@@ -31,8 +31,9 @@ public class Processing {
     @Autowired
     FiosUtil fiosUtil;
 
-    public Graph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);//  DefaultDirectedGraph     DefaultDirectedWeightedGraph
+    public Graph<String, DefaultEdge> graph = new SimpleGraph<>(DefaultEdge.class);//  DefaultDirectedGraph     DefaultDirectedWeightedGraph
     public Map<String, List<List<String>>> groupMap = new HashMap<>();
+    public List<List<List<String>>> groupList = new CopyOnWriteArrayList<>();
     private Integer groupCounter = 1;
 
     public void process() throws IOException {
@@ -70,6 +71,7 @@ public class Processing {
                 }
             }
         }
+        graph.addEdge(row.get(0), row.get(row.size()-1));
     }
 
     public boolean graphIterate(Graph<String, DefaultEdge> graph) {
@@ -77,9 +79,9 @@ public class Processing {
         List<String> groupVertex = new ArrayList<>();
         Iterator<String> graphIterator = graph.vertexSet().iterator();
         if (graphIterator.hasNext()) {// getStartVertex
-            DepthFirstIterator<String, DefaultEdge> breadthFirstIterator = new DepthFirstIterator<>(graph, graphIterator.next());//todo: def:  BreadthFirstIterator
-            while (breadthFirstIterator.hasNext()) {
-                String vertex = breadthFirstIterator.next();
+            DepthFirstIterator<String, DefaultEdge> depthFirstIterator = new DepthFirstIterator<>(graph, graphIterator.next());//todo: def:  BreadthFirstIterator
+            while (depthFirstIterator.hasNext()) {
+                String vertex = depthFirstIterator.next();
                 groupVertex.add(vertex);
             }
             for (String vertex : groupVertex) {
@@ -89,8 +91,6 @@ public class Processing {
         removeGraphEntrySaveRows(groupRows);
         return graph.vertexSet().size() == 0;
     }
-
-    List<List<List<String>>> groupList = new CopyOnWriteArrayList<>();
 
     private void removeGraphEntrySaveRows(List<List<String>> group){
         List<List<String>> rowsGroup = group.stream()
@@ -105,8 +105,6 @@ public class Processing {
         Iterator<List<List<String>>> groupsIterator = groupList.iterator();
         while (groupsIterator.hasNext()){
             List<List<String>> currentGroup = groupsIterator.next();
-
-
             groupList.stream()
                     .filter(iterateGroup -> iterateGroup.equals(currentGroup))
                     .peek(iterateGroup -> {
@@ -123,7 +121,3 @@ public class Processing {
     }
 }
 
-//"1000";"22222"
-//"1000";"1"
-//"3";"55"
-//"12345";"3"
