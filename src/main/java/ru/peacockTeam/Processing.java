@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Processing {
 
@@ -16,7 +17,8 @@ public class Processing {
     private Integer groupCounter = 1;
     public Map<String, Set<List<String>>> rowsMap = new HashMap<>();
     public Map<String, Set<String>> interceptionsMap = new ConcurrentHashMap<>();
-    public List<List<String>> groupList = new LinkedList<>();
+    public List<Set<List<String>>> interceptionRowSetsList = new CopyOnWriteArrayList<>();
+
 
     public Processing() {
         this.fiosUtil = new FiosUtil();
@@ -33,7 +35,7 @@ public class Processing {
         }
         csvReader.close();
         collapseMaps();
-//        outputGroups();
+        outputGroups();
     }
 
     public void buildMaps(List<String> row) {
@@ -58,7 +60,6 @@ public class Processing {
     private void collapseMaps() {
         Iterator<Map.Entry<String, Set<String>>> interceptionsMapIterator = interceptionsMap.entrySet().iterator();
         while (interceptionsMapIterator.hasNext()) {
-            boolean isIntercept = false;
             Map.Entry<String, Set<String>> entryIntspMap = interceptionsMapIterator.next();
             String key = entryIntspMap.getKey();
             for (String iteratedValue : entryIntspMap.getValue()) {
@@ -73,25 +74,81 @@ public class Processing {
                         x.addAll(y);
                         return x;
                     });
-                    isIntercept = true;
                 }
             }
-            System.out.println("Group<>: " + rowsMap.get(key) + ", interception: " + isIntercept);
+            Set<List<String>> interceptNextRows = rowsMap.get(key);
+            interceptionRowSetsList.add(interceptNextRows);
+//            System.out.println("Group<>: " + interceptNextRows);
             interceptionsMap.remove(key);
             rowsMap.remove(key);
         }
     }
 
+
+    Set<List<String>> group = new HashSet<>();
+
     private void outputGroups() {
-        for (Map.Entry<String, Set<List<String>>> entry : rowsMap.entrySet()) {
-            System.out.println("Group<" + groupCounter++ + ">:" +
-                    "\n---------------------------------------------------");
-            entry.getValue().stream()
-                    .sorted(Comparator.comparingInt(List::size))
-                    .distinct().forEach(System.out::println);
+        Iterator<Set<List<String>>> interceptionRowSetIterator = interceptionRowSetsList.iterator();
+        Set<List<String>> currentRowSet = interceptionRowSetIterator.next();// without check on null first..
+
+        while (interceptionRowSetIterator.hasNext()){
+            Set<List<String>> rowSet = interceptionRowSetIterator.next();
+            boolean isIntercepted = currentRowSet.contains(rowSet);
+            if(isIntercepted){
+                rowSet.addAll(currentRowSet);
+                interceptionRowSetsList.add(rowSet);
+                interceptionRowSetsList.remove(rowSet);
+            }
+        }
+
+        interceptionRowSetsList.stream()
+                .sorted(Comparator.comparingInt(Set::size))
+                .distinct().forEach(item -> System.out.println("\nGroup<" + groupCounter++ + ">:" +
+                "\n---------------------------------------------------\n" + item));
+    }
+
+
+
+    public void buildGroups(List<Set<List<String>>> interceptionRowSetsList) {
+        for (Set<List<String>> interceptionRowSet : interceptionRowSetsList) {
+
+//            Set<String> vertexSet = new HashSet<>();
+//            Set<String> iterationRow = new HashSet<>(row);
+//            iterationRow.remove(rowItem);
+//            vertexSet.addAll(iterationRow);
+//            interceptionsMap.merge(rowItem, vertexSet, (x, y) -> {
+//                x.addAll(y);
+//                return x;
+//            });
+//            Set<List<String>> rowSet = new HashSet<>();
+//            rowSet.add(row);
+//            rowsMap.merge(rowItem, rowSet, (x, y) -> {
+//                x.addAll(y);
+//                return x;
+//            });
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
