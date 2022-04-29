@@ -18,11 +18,12 @@ public class Processing {
     public Map<String, Set<List<String>>> rowsMap = new HashMap<>();
     public Map<String, Set<String>> interceptionsMap = new ConcurrentHashMap<>();
     public List<Set<List<String>>> interceptionRowSetsList = new CopyOnWriteArrayList<>();
-
+    public Map<List<String>, Set<List<String>>> interceptionGroupMap = new HashMap<>();
 
     public Processing() {
         this.fiosUtil = new FiosUtil();
     }
+
 
     public void process() throws IOException {
         byte[] resourceFileByteStream = fiosUtil.getCopyByteArrayStream(fiosUtil.getResourceFileStream());
@@ -84,13 +85,9 @@ public class Processing {
         }
     }
 
-
-    Set<List<String>> group = new HashSet<>();
-
     private void outputGroups() {
         Iterator<Set<List<String>>> interceptionRowSetIterator = interceptionRowSetsList.iterator();
         Set<List<String>> currentRowSet = interceptionRowSetIterator.next();// without check on null first..
-
         while (interceptionRowSetIterator.hasNext()){
             Set<List<String>> rowSet = interceptionRowSetIterator.next();
             boolean isIntercepted = currentRowSet.contains(rowSet);
@@ -100,32 +97,25 @@ public class Processing {
                 interceptionRowSetsList.remove(rowSet);
             }
         }
-
-        interceptionRowSetsList.stream()
+        buildGroups(interceptionRowSetsList);
+        interceptionGroupMap.values().stream()
                 .sorted(Comparator.comparingInt(Set::size))
-                .distinct().forEach(item -> System.out.println("\nGroup<" + groupCounter++ + ">:" +
-                "\n---------------------------------------------------\n" + item));
+                .distinct().forEach(item -> System.out.println("\nGroup<" + groupCounter++ + ">: " + item));
     }
-
-
 
     public void buildGroups(List<Set<List<String>>> interceptionRowSetsList) {
         for (Set<List<String>> interceptionRowSet : interceptionRowSetsList) {
-
-//            Set<String> vertexSet = new HashSet<>();
-//            Set<String> iterationRow = new HashSet<>(row);
-//            iterationRow.remove(rowItem);
-//            vertexSet.addAll(iterationRow);
-//            interceptionsMap.merge(rowItem, vertexSet, (x, y) -> {
-//                x.addAll(y);
-//                return x;
-//            });
-//            Set<List<String>> rowSet = new HashSet<>();
-//            rowSet.add(row);
-//            rowsMap.merge(rowItem, rowSet, (x, y) -> {
-//                x.addAll(y);
-//                return x;
-//            });
+            Set<List<String>> iterationRowsSet = new HashSet<>(interceptionRowSet);
+            for (List<String> row : iterationRowsSet) {
+                Set<List<String>> vertexSet = new HashSet<>();
+                Set<List<String>> iterationRowSet = new HashSet<>(vertexSet);
+                iterationRowSet.remove(row);
+                vertexSet.addAll(iterationRowsSet);
+                interceptionGroupMap.merge(row, vertexSet, (x, y) -> {
+                    x.addAll(y);
+                    return x;
+                });
+            }
         }
     }
 }
