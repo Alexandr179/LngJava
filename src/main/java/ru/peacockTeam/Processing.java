@@ -12,12 +12,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Processing {
 
-    public static String SOURCE_LNG_FILE = "lng_test.csv";
+    public static String SOURCE_LNG_FILE = "lng.csv";
     private final FiosUtil fiosUtil;
     private Integer groupCounter = 1;
     public Map<String, Set<List<String>>> rowsMap = new HashMap<>();
     public Map<String, Set<String>> interceptionsMap = new ConcurrentHashMap<>();
-    public List<Set<List<String>>> interceptionRowSetsList = new CopyOnWriteArrayList<>();
+    public List<Set<List<String>>> interceptionRowSetsList = new LinkedList<>();
     public Map<List<String>, Set<List<String>>> interceptionGroupMap = new HashMap<>();
 
     public Processing() {
