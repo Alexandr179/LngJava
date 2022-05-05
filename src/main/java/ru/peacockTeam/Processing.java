@@ -8,11 +8,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Processing {
 
-    public static String SOURCE_LNG_FILE = "lng.csv";
+    public static String SOURCE_LNG_FILE = "lng_last.csv";
     private final FiosUtil fiosUtil;
     private Integer groupCounter = 1;
     public Map<String, Set<List<String>>> rowsMap = new HashMap<>();
@@ -36,6 +35,7 @@ public class Processing {
         }
         csvReader.close();
         collapseMaps();
+        collapseGroups();
         outputGroups();
     }
 
@@ -85,7 +85,7 @@ public class Processing {
         }
     }
 
-    private void outputGroups() {
+    private void collapseGroups() {
         Iterator<Set<List<String>>> interceptionRowSetIterator = interceptionRowSetsList.iterator();
         Set<List<String>> currentRowSet = interceptionRowSetIterator.next();// without check on null first..
         while (interceptionRowSetIterator.hasNext()){
@@ -98,9 +98,6 @@ public class Processing {
             }
         }
         buildGroups(interceptionRowSetsList);
-        interceptionGroupMap.values().stream()
-                .sorted(Comparator.comparingInt(Set::size))
-                .distinct().forEach(item -> System.out.println("\nGroup<" + groupCounter++ + ">: " + item));
     }
 
     public void buildGroups(List<Set<List<String>>> interceptionRowSetsList) {
@@ -117,6 +114,12 @@ public class Processing {
                 });
             }
         }
+    }
+
+    private void outputGroups() {
+        interceptionGroupMap.values().stream()
+                .sorted(Comparator.comparingInt(Set::size))
+                .distinct().forEach(item -> System.out.println("\nGroup<" + groupCounter++ + ">: " + item));
     }
 }
 
