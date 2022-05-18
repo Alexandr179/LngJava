@@ -33,7 +33,7 @@ public class Processing {
 
     public Graph<String, DefaultEdge> graph = new SimpleGraph<>(DefaultEdge.class);//  DefaultDirectedGraph     DefaultDirectedWeightedGraph
     public Map<String, List<List<String>>> groupMap = new HashMap<>();
-    public List<List<List<String>>> groupList = new CopyOnWriteArrayList<>();
+    public List<List<List<String>>> groupList = new LinkedList<>();
     private Integer groupCounter = 1;
 
     public void process() throws IOException {
